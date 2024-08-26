@@ -1,0 +1,4 @@
+QuTip==4.7.1
+MatPlotLib
+Quantum-Tomography
+latex

@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from qutip import *
 
+# plt.rcParams.update(plt.rcParamsDefault)
+
 
 plt.rcParams['text.usetex'] =   True
 plt.rcParams["font.family"] =   "serif"

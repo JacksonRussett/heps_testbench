@@ -14,9 +14,9 @@ np.set_printoptions(suppress=True, precision=4)
 tomo = qKLib.Tomography()
 tomo.importConf('conf.txt')
 
-plt.rcParams['text.usetex'] =   True
-plt.rcParams["font.family"] =   "serif"
-plt.rcParams["font.size"] =     "14"
+# plt.rcParams['text.usetex'] =   True
+# plt.rcParams["font.family"] =   "serif"
+# plt.rcParams["font.size"] =     "14"
 
 
 '''
@@ -310,7 +310,7 @@ def main():
 
     #single_setting_example()
     #(trial_data, phis) = mc_phase(num_trials=1000, add_poisson_noise=False)
-    (trial_data, phis, static_settings, fluc_settings) = mc_phase(num_trials=2, add_poisson_noise=True)
+    (trial_data, phis, static_settings, fluc_settings) = mc_phase(num_trials=10, add_poisson_noise=True)
     np.savez('Dynamic6THz_T400_A10p_C50p_MismSrc_PNoise.npz', td=trial_data, phis=phis, ss=static_settings, fs=fluc_settings)
     
     # Record the end time
