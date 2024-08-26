@@ -1,4 +1,4 @@
-conf['NQubits'] = 1
+conf['NQubits'] = 2
 conf['NDetectors'] = 1
 conf['Crosstalk'] = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
 conf['UseDerivative'] = 0

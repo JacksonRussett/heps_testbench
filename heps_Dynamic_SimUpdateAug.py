@@ -1,37 +1,15 @@
-#Hyper-entangled photon source testbench
-#Author: Alexander Greenwood, Jackson Russett
+#Hyper-entangled photon source dynamic simulations
+#Author: Jackson Russett
 import numpy as np
 import time
 import matplotlib.pyplot as plt
 import QuantumTomography as qKLib
 from qutip import *
 
+
 from meas_stats import quick_counts, gen_tomo_input
 
-np.set_printoptions(suppress=True, precision=4)
-
-# Initialize Tomography Object
-tomo = qKLib.Tomography()
-tomo.importConf('conf.txt')
-
-plt.rcParams['text.usetex'] =   True
-plt.rcParams["font.family"] =   "serif"
-plt.rcParams["font.size"] =     "14"
-
-
-'''
-
-Configuration of the setup that we wish to simulate.
-________x______
-|              |   _________
-|______        |  |
-|_PPSF_|       PBS
-|              |  |_________
-|_______x______|
-
-
-'''
-
+# from heps_state import *
 ########DEFINE GLOBAL CONSTANTS############
 c = 2.997925 * 10 ** (8) #m/s, speed of light
 
@@ -81,6 +59,17 @@ def define_state(dw, theta_1,theta_2,l_1,l_1p,l_2,l_2p,p=1/np.sqrt(2)):
     #print(np.abs(non_id1), np.abs(non_id2), np.abs(non_id3), np.abs(non_id4))
 
     return 1/(np.sqrt(2))*(term_1 + term_2 + term_3 + term_4)
+
+
+np.set_printoptions(suppress=True, precision=4)
+
+# Initialize Tomography Object
+tomo = qKLib.Tomography()
+tomo.importConf('conf.txt')
+
+plt.rcParams['text.usetex'] =   True
+plt.rcParams["font.family"] =   "serif"
+plt.rcParams["font.size"] =     "14"
 
 def single_setting_example(N=100):
      ## Static Params
@@ -224,7 +213,7 @@ def dynamic_pwrimb_sim(static_settings, fluc_settings, num_meas, Tacq, src_brigh
 
     # Perform state estimation
     # print(tomo_input)
-    [rho, intens, fval] = tomo.StateTomography_Matrix(tomo_input, method='MLE')
+    [rho, intens, fval] = tomo.StateTomography_Matrix(tomo_input)
     #qKLib.printLastOutput(tomo)
     return (Qobj(rho, dims=[[2,2],[2,2]]), intens, fval)
 
@@ -310,7 +299,7 @@ def main():
 
     #single_setting_example()
     #(trial_data, phis) = mc_phase(num_trials=1000, add_poisson_noise=False)
-    (trial_data, phis, static_settings, fluc_settings) = mc_phase(num_trials=2, add_poisson_noise=True)
+    (trial_data, phis, static_settings, fluc_settings) = mc_phase(num_trials=10, add_poisson_noise=True)
     np.savez('Dynamic6THz_T400_A10p_C50p_MismSrc_PNoise.npz', td=trial_data, phis=phis, ss=static_settings, fs=fluc_settings)
     
     # Record the end time
