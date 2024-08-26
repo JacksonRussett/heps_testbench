@@ -1,0 +1,4 @@
+Quantum-Tomography
+MatPlotLib
+NumPy
+QuTip
