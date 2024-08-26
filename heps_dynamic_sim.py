@@ -1,28 +1,8 @@
-#Hyper-entangled photon source dynamic simulations
-#Author: Jackson Russett
 import numpy as np
-import time
 import matplotlib.pyplot as plt
-import QuantumTomography as qKLib
-from qutip import *
-
-
-from meas_stats import quick_counts, gen_tomo_input
+from qutip import concurrence, basis, tensor
 from heps_state import *
-
-np.set_printoptions(suppress=True, precision=4)
-
-# Initialize Tomography Object
-tomo = qKLib.Tomography()
-tomo.importConf('conf.txt')
-
-plt.rcParams['text.usetex'] =   True
-plt.rcParams["font.family"] =   "serif"
-plt.rcParams["font.size"] =     "14"
-
-# Initialize Tomography Object
-tomo = qKLib.Tomography()
-tomo.importConf('conf.txt')
+from meas_stats import quick_counts, gen_tomo_input
 
 def single_setting_example(N=100):
      ## Static Params
@@ -72,7 +52,7 @@ def generate_pwrimb_time_series(T=100, A=0.1, C=0.5, phi=0.0, num_periods=2, res
     p = np.sqrt(R_ps)
     return (t, R_ps, p)
 
-def dynamic_pwrimb_sim(static_settings, fluc_settings, num_meas, Tacq, src_brightness, add_noise=False, do_time_plot=False):
+def dynamic_pwrimb_sim(tomo, static_settings, fluc_settings, num_meas, Tacq, src_brightness, add_noise=False, do_time_plot=False):
     max_cc = Tacq * src_brightness
     (t, R_ps, p) = generate_pwrimb_time_series(T=fluc_settings['period'], 
                                                A=fluc_settings['amplit'], 
@@ -170,7 +150,7 @@ def dynamic_pwrimb_sim(static_settings, fluc_settings, num_meas, Tacq, src_brigh
     #qKLib.printLastOutput(tomo)
     return (Qobj(rho, dims=[[2,2],[2,2]]), intens, fval)
 
-def mc_phase(num_trials=10, add_poisson_noise=False):
+def mc_phase(tomo, num_trials=10, add_poisson_noise=False):
     ## Static Params
     N = 100                                 # number of slices in finite bandwidth approx
     src_brightness = 100                    # baseline brightness, Hz
@@ -203,7 +183,7 @@ def mc_phase(num_trials=10, add_poisson_noise=False):
     phi_rnd = np.random.uniform(0.0, 2*np.pi, size=num_trials)
     for i in range(0, num_trials):
         fluc_settings['phisft'] = phi_rnd[i]
-        (rho, _, _) = dynamic_pwrimb_sim(static_settings, fluc_settings, num_meas, Tacq, src_brightness, add_noise=add_poisson_noise, do_time_plot=False)
+        (rho, _, _) = dynamic_pwrimb_sim(tomo, static_settings, fluc_settings, num_meas, Tacq, src_brightness, add_noise=add_poisson_noise, do_time_plot=False)
         concurrence_trials.append(concurrence(rho))
         print(f'Finished trial {i+1} of {num_trials}...')
     return (concurrence_trials, phi_rnd, static_settings, fluc_settings)
@@ -230,41 +210,3 @@ def display_mc_singleparam_results(trial_data, mc_param, param_ax_label):
     # Adjust layout
     plt.tight_layout()
 
-def main():
-    '''
-    We assume full bandwidth of the PPSF biphoton spectrum to be 10THz in the case of no filter.
-    
-    Useful definitions
-        # power split ratio, R_ps = I1 / (I1 + I2)
-        # brightness amplitude factor, p ~ sqrt(R_ps)
-
-    Some observations...
-        # period T=400s, R_ps ampl=23%   based on PumpInputSpliced+NewFoam_PBSout_3.fig and assuming C is 0.5 -> range is then 27% to 73%
-        ## raw counts fluctuate 10% from 400-450Hz
-        ## PA counts fuctuate 40% from 130-180Hz
-
-    Other notes
-        After running state estimation, fval above the number of tomographic measurements indicates poor agreement of state with data
-          from https://quantumtomo.web.illinois.edu/Doc/StateTomography_Matrix  
-    ''' 
-
-    start_time = time.time()
-
-    #single_setting_example()
-    #(trial_data, phis) = mc_phase(num_trials=1000, add_poisson_noise=False)
-    (trial_data, phis, static_settings, fluc_settings) = mc_phase(num_trials=10, add_poisson_noise=True)
-    np.savez('Dynamic6THz_T400_A10p_C50p_MismSrc_PNoise.npz', td=trial_data, phis=phis, ss=static_settings, fs=fluc_settings)
-    
-    # Record the end time
-    end_time = time.time()
-    # Calculate the execution time
-    execution_time = end_time - start_time
-    print(f'Execution time: {execution_time/60.0} minutes')
-
-    display_mc_singleparam_results(trial_data, phis, 'phase (rad)')
-
-    plt.show()
-
-
-if __name__ == "__main__":
-    main()

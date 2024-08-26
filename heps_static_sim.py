@@ -1,79 +1,8 @@
-#Hyper-entangled photon source testbench
-#Author: Alexander Greenwood, Jackson Russett
 import numpy as np
 import matplotlib.pyplot as plt
-from qutip import *
+from qutip import concurrence
 
-# plt.rcParams.update(plt.rcParamsDefault)
-
-
-plt.rcParams['text.usetex'] =   True
-plt.rcParams["font.family"] =   "serif"
-plt.rcParams["font.size"] =     "14"
-
-
-'''
-
-Configuration of the setup that we wish to simulate.
-________x______
-|              |   _________
-|______        |  |
-|_PPSF_|       PBS
-|              |  |_________
-|_______x______|
-
-
-'''
-
-########DEFINE GLOBAL CONSTANTS############
-c = 2.997925 * 10 ** (8) #m/s, speed of light
-
-h_pol_ket = basis(2,0)
-v_pol_ket = basis(2,1)
-i_freq_ket = basis(2,0)
-s_freq_ket = basis(2,1)
-hs_ket = tensor(h_pol_ket,s_freq_ket)
-hi_ket = tensor(h_pol_ket,i_freq_ket)
-vs_ket = tensor(v_pol_ket,s_freq_ket)
-vi_ket = tensor(v_pol_ket,i_freq_ket)
-hshi_ket = tensor(hs_ket,hi_ket)
-hihs_ket = tensor(hi_ket,hs_ket)
-hsvi_ket = tensor(hs_ket,vi_ket)
-hivs_ket = tensor(hi_ket,vs_ket)
-vsvi_ket = tensor(vs_ket,vi_ket)
-vivs_ket = tensor(vi_ket,vs_ket)
-vshi_ket = tensor(vs_ket,hi_ket)
-vihs_ket = tensor(vi_ket,hs_ket)
-
-def define_state(dw, theta_1,theta_2,l_1,l_1p,l_2,l_2p,p=1/np.sqrt(2)):
-    #Definition of constants:
-    M = 1.297564e-12     # unit = 10^-12 s/m to avoid calculation with extremely large or small numbers
-                    # correspondingly, \Delta n should be in the unit of rad * THz (or rad * 10^12/s)
-    e = np.e
-    kc = 5927434.262 # SI unit
-    # Assuming \Delta\omega = 2 pi * 2 THz
-    Mdw = M * 2 * np.pi * dw
-    #p =  #Amplitude placeholder
-
-    # Assuming l_2 +l_2 - l_1 - l_1' = 0, we don't need the k_c term
-
-    non_id1 = (np.cos(theta_1)**2*e**(Mdw*l_1*1j) - np.sin(theta_1)**2*e**(-Mdw*l_1*1j))*e**(Mdw*l_1p*1j)
-    # # This just corresponds to nonidealities of first term in output state
-
-    non_id2 = (np.cos(theta_1)**2*e**(-Mdw*l_1*1j) - np.sin(theta_1)**2*e**(Mdw*l_1*1j))*e**(-Mdw*l_1p*1j)
-
-    non_id3 = (np.cos(theta_2)**2*e**(-Mdw*l_2*1j) - np.sin(theta_2)**2*e**(Mdw*l_2*1j))*e**(-Mdw*l_2p*1j)*e**(2*kc*(l_2+l_2p-l_1-l_1p)*1j)
-
-    non_id4 = (np.cos(theta_2)**2*e**(Mdw*l_2*1j) - np.sin(theta_2)**2*e**(-Mdw*l_2*1j))*e**(Mdw*l_2p*1j)*e**(2*kc*(l_2+l_2p-l_1-l_1p)*1j)
-
-    term_1 = p*hsvi_ket*non_id1
-    term_2 = p*hivs_ket*non_id2
-    term_3 = np.sqrt(1-p**2)*vshi_ket*non_id3
-    term_4 = np.sqrt(1-p**2)*vihs_ket*non_id4
-
-    #print(np.abs(non_id1), np.abs(non_id2), np.abs(non_id3), np.abs(non_id4))
-
-    return 1/(np.sqrt(2))*(term_1 + term_2 + term_3 + term_4)
+from heps_state import *
 
 def single_setting_example(N=100):
     single_settings = {
@@ -101,20 +30,14 @@ def single_setting_example(N=100):
 
     # density matrix sum method
     he_l = []
-    he_normsqr = []
     w_deg = 2*np.pi*c/single_settings['lambda_deg']
-    Dw = single_settings['filter_range'][1] - single_settings['filter_range'][0]
     for i in range(0,N):
         w_s = w_deg + single_settings['filter_range'][i]
         w_i = w_deg - single_settings['filter_range'][i]
         he_state = define_state(single_settings['filter_range'][i]/(2*np.pi),single_settings['a1'],single_settings['a2'],single_settings['l1'],single_settings['l1_p'],single_settings['l2'],single_settings['l2_p'])#single_settings['p']
         he_l.append(he_state)
-        #print('MSTE',concurrence(he_state.ptrace([0,2])), he_state.norm())
     
-    #print(he_l)
-    #print(sum(he_normsqr).norm()) 
-    he_sum = (sum(he_l))/N#/np.sqrt(sum(he_normsqr).norm())#np.sqrt(sum(he_normsqr).norm())
-    #print(he_sum)
+    he_sum = (sum(he_l))/N
     print('MSUM',concurrence(he_sum.ptrace([0,2])), he_sum.norm())
 
 def length_angle_inft(dw, min_m, max_m, min_t, max_t, size=20):
@@ -399,36 +322,3 @@ def powerimbalan_st(bw, min_p, max_p, N=100, size=20):
     ax2.set_xbound(ax1.get_xbound())
     ax2.set_xticklabels([np.round((x*np.sqrt(0.5))**2, 2) for x in ax1.get_xticks()])
     ax2.set_xlabel('$R_{ps}$')
-
-    
-    
-
-
-def main():
-    N=1
-    matrix_size = 50
-    
-    '''
-        We assume full bandwidth of the PPSF biphoton spectrum to be 10THz in the case of no filter.
-    '''
-
-    #powerimbalan_st(1.2e12,0.5*np.sqrt(0.5),np.sqrt(0.5),N,matrix_size)
-    powerimbalan_st(6.0e12,0.5*np.sqrt(0.5),np.sqrt(0.5),N,matrix_size)
-
-    #length_angle_st(1.2e12,-0.1,0.1,-20,20,N,matrix_size)
-    #length_angle_st(6.0e12,-0.1,0.1,-20,20,N,matrix_size)
-    #length_angle_dt(0.4e12, 0.8e12,-0.1,0.1,-20,20,N,matrix_size)
-
-    #length_angle_inft(0.6e12,-0.1,0.1,-20,20,matrix_size)
-    #length_angle_inft(1.8e12,-0.1,0.1,-20,20,matrix_size)
-    #length_angle_inft(3.0e12,-0.1,0.1,-20,20,matrix_size)
-    
-    
-
-    # Display the plots
-    plt.show()  
-
-
-
-if __name__ == "__main__":
-    main()
