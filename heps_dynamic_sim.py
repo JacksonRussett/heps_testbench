@@ -4,7 +4,7 @@ from qutip import concurrence, basis, tensor
 from heps_state import *
 from meas_stats import quick_counts, gen_tomo_input
 
-def single_setting_example(N=100):
+def single_setting_example(tomo, N=100):
      ## Static Params
     N = 100                                 # number of slices in finite bandwidth approx
     src_brightness = 100                    # baseline brightness, Hz
@@ -37,7 +37,7 @@ def single_setting_example(N=100):
     ## Other params
     do_time_plot = True
 
-    (rho, intens, fval) = dynamic_pwrimb_sim(src_settings, fluc_settings, num_meas, Tacq, src_brightness, add_noise, do_time_plot)
+    (rho, intens, fval) = dynamic_pwrimb_sim(tomo, src_settings, fluc_settings, num_meas, Tacq, src_brightness, add_noise, do_time_plot)
     print('C =\t', concurrence(rho))
     print('I_est =\t', intens)
     print('fval =\t', fval)
@@ -154,7 +154,7 @@ def mc_phase(tomo, num_trials=10, add_poisson_noise=False):
     ## Static Params
     N = 100                                 # number of slices in finite bandwidth approx
     src_brightness = 100                    # baseline brightness, Hz
-    bw = 6.0e12                             # bandwdith of single flat-top filter, Hz
+    bw = 2.4e12                             # bandwdith of single flat-top filter, Hz
     static_settings = {
         'lambda_deg':   1556e-9,
         'l1':           1.000,
