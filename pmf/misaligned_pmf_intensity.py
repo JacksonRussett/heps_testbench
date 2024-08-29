@@ -24,7 +24,7 @@ L1 = 3.00e0            # length of PMF (meters)
 L2 = 1.00e0            # length of PMF (meters)
 L3 = 0.00e0            # length of PMF (meters)
 ## oz fiber reports ER of ~30 witch corresponds to ~2 deg misalignment
-alpha = 2 / 180 * np.pi  # angular misalignment at connector (rad)
+alpha = 0 / 180 * np.pi  # angular misalignment at connector (rad)
 beta =  0 / 180 * np.pi  # angular misalignment at cross-splice (rad)
 gamma = 1.0*np.pi/4      # angular of PMF output to polarizer (rad)
 #input state

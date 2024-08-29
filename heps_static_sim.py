@@ -4,6 +4,44 @@ from qutip import concurrence
 
 from heps_state import *
 
+def plot_length_angle_mismatch(title, matrix1=[], mx1_xlabel=[], mx1_xticks=[], mx1_ylabel=[], mx1_yticks=[], matrix2=[], mx2_xlabel=[], mx2_xticks=[], mx2_ylabel=[], mx2_yticks=[]):
+    # Create new figure for this test
+    if matrix1 == [] or matrix2 == []:
+        fig, ax1 = plt.subplots(1, 1, figsize=(6, 5), constrained_layout=True)
+        ax2 = ax1
+    else:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5), constrained_layout=True)
+    fig.suptitle(title, fontsize=24)
+
+    if not matrix1 == []:
+        im1 = ax1.imshow(matrix1, cmap='viridis', interpolation='nearest')
+        # Generate tick positions and labels
+        tick_positions = np.linspace(0, matrix1.shape[1] - 1, num=5)  # 5 ticks for simplicity
+        # xtick_labels = np.linspace(min(mm), max(mm), num=5)  
+        # ytick_labels = np.linspace(min(dws), max(dws), num=5)
+        ax1.set_xticks(tick_positions, labels=np.round(mx1_xticks, 2))
+        ax1.set_yticks(tick_positions, labels=np.round(mx1_yticks, 2))
+        ax1.invert_yaxis()
+        fig.colorbar(im1, ax=ax1, label='Concurrence')
+        ax1.set_xlabel(mx1_xlabel)
+        ax1.set_ylabel(mx1_ylabel)
+        ax1.set_title('Effect of Length Mismatch')
+
+    if not matrix2 == []:
+        im2 = ax2.imshow(matrix2, cmap='viridis', interpolation='nearest')
+        tick_positions = np.linspace(0, matrix2.shape[1] - 1, num=5)
+        # xtick_labels = np.linspace(min(tt), max(tt), num=5)  
+        # ytick_labels = np.linspace(min(dws), max(dws), num=5)
+        ax2.set_xticks(tick_positions, labels=np.round(mx2_xticks, 2))
+        ax2.set_yticks(tick_positions, labels=np.round(mx2_yticks, 2))
+        ax2.invert_yaxis()
+        fig.colorbar(im2, ax=ax2, label='Concurrence')
+        ax2.set_xlabel(mx2_xlabel)
+        ax2.set_ylabel(mx2_ylabel)
+        ax2.set_title('Effect of Angular Mismatch')
+
+    return fig, ax1, ax2
+
 def single_setting_example(N=100):
     single_settings = {
         'lambda_deg':   1556e-9,
@@ -116,6 +154,78 @@ def length_angle_inft(dw, min_m, max_m, min_t, max_t, size=20):
     ax2.set_ylabel('\\textit{$t_2$} (deg)')
     ax2.set_title('Effect of Angular Mismatch')
 
+def length_angle_inft_slices(dws, min_m, max_m, min_t, max_t, size=20):
+    settings = {
+        'lambda_deg':   1556e-9,
+        'l1':           1.000,
+        'l1_p':         1.000,
+        'l2':           1.000,
+        'l2_p':         1.000,                                  
+        'a1':           90.0 * np.pi/180.0,                      
+        'a2':           90.0 * np.pi/180.0,
+        'p':            np.sqrt(0.5),                            
+        'filter_range': dws[0]
+    }
+
+    def conc_length_mismatch(dw, m1, m2):
+        settings['l1_p'] = settings['l1'] + m1
+        settings['l2_p'] = settings['l2'] + m2
+    
+        he_state = define_state(dw,settings['a1'],settings['a2'],settings['l1'],settings['l1_p'],settings['l2'],settings['l2_p'])
+
+        return concurrence(he_state.ptrace([0,2]))
+    
+    def conc_angle_mismatch(dw, t1, t2):
+        settings['a1'] = (90+t1) * np.pi/180.0
+        settings['a2'] = (90+t2) * np.pi/180.0
+        
+        he_state = define_state(dw,settings['a1'],settings['a2'],settings['l1'],settings['l1_p'],settings['l2'],settings['l2_p'])
+            
+        return concurrence(he_state.ptrace([0,2]))
+
+    # Generate the matrix using the concurrence function
+    mm = np.linspace(min_m,max_m,size)
+    matrix1 = np.zeros((len(dws), size))
+    for j, m in enumerate(mm):
+        for i, dw in enumerate(dws):
+            matrix1[i, j] = conc_length_mismatch(dw, m, m)
+
+    settings['l1_p'] = settings['l1'] + 0.1
+    settings['l2_p'] = settings['l2'] + 0.1
+
+    # Generate the matrix using the concurrence function
+    tt = np.linspace(min_t,max_t,size)
+    matrix2 = np.zeros((len(dws), size))
+    for j, t in enumerate(tt):
+        for i, dw in enumerate(dws):
+            matrix2[i, j] = conc_angle_mismatch(dw, t, t)
+    
+
+    print(np.min(matrix2), np.max(matrix2))
+
+    dws = dws / 1e12
+    xtick_labels1 = np.linspace(min(mm), max(mm), num=5)  
+    ytick_labels1 = np.linspace(min(dws), max(dws), num=5)
+    xlabel1 = '\\textit{$\\alpha$} (m)'
+    ylabel1 = '\\textit{$d\\omega$} (THz)'
+    xtick_labels2 = np.linspace(min(tt), max(tt), num=5)  
+    ytick_labels2 = np.linspace(min(dws), max(dws), num=5)
+    xlabel2 = '\\textit{$t$} (deg)'
+    ylabel2 = '\\textit{$d\\omega$} (THz)'
+
+    plot_length_angle_mismatch(' Infinitesimal Bin Detuning ',
+                               matrix1=matrix1, 
+                               mx1_xlabel=xlabel1, 
+                               mx1_xticks=xtick_labels1, 
+                               mx1_ylabel=ylabel1,
+                               mx1_yticks=ytick_labels1,
+                               matrix2=matrix2,
+                               mx2_xlabel=xlabel2, 
+                               mx2_xticks=xtick_labels2, 
+                               mx2_ylabel=ylabel2,
+                               mx2_yticks=ytick_labels2
+                               )
+
 def length_angle_st(bw, min_m, max_m, min_t, max_t, N=100, size=20):
     settings = {
         'lambda_deg':   1556e-9,
@@ -198,6 +308,86 @@ def length_angle_st(bw, min_m, max_m, min_t, max_t, N=100, size=20):
     ax2.set_ylabel('\\textit{$t_2$} (deg)')
     ax2.set_title('Effect of Angular Mismatch')
 
+def length_angle_st_slices(dws, min_m, max_m, min_t, max_t, N=100, size=20):
+    settings = {
+        'lambda_deg':   1556e-9,
+        'l1':           1.000,
+        'l1_p':         1.000,
+        'l2':           1.000,
+        'l2_p':         1.000,                                  
+        'a1':           90.0 * np.pi/180.0,                      
+        'a2':           90.0 * np.pi/180.0,
+        'p':            np.sqrt(0.5),                            
+        'filter_range': dws[0]
+    }
+
+    def conc_length_mismatch(bw, m1, m2):
+        settings['l1_p'] = settings['l1'] + m1
+        settings['l2_p'] = settings['l2'] + m2
+        dd = np.linspace(0.0e12,0.5*bw,N)
+        he_l = []
+        for i in range(0,N):
+            he_state = define_state(dd[i],settings['a1'],settings['a2'],settings['l1'],settings['l1_p'],settings['l2'],settings['l2_p'])
+            he_l.append(he_state)
+    
+        he_sum = (sum(he_l))/N
+        return concurrence(he_sum.ptrace([0,2]))
+    
+    def conc_angle_mismatch(bw, t1, t2):
+        settings['a1'] = (90+t1) * np.pi/180.0
+        settings['a2'] = (90+t2) * np.pi/180.0
+        dd = np.linspace(0.0e12,0.5*bw,N)
+        he_l = []
+        for i in range(0,N):
+            he_state = define_state(dd[i],settings['a1'],settings['a2'],settings['l1'],settings['l1_p'],settings['l2'],settings['l2_p'])
+            he_l.append(he_state)
+
+        he_sum = (sum(he_l))/N
+        return concurrence(he_sum.ptrace([0,2]))
+
+    # Generate the matrix using the concurrence function
+    mm = np.linspace(min_m,max_m,size)
+    matrix1 = np.zeros((len(dws), size))
+    for j, m in enumerate(mm):
+        for i, dw in enumerate(dws):
+            matrix1[i, j] = conc_length_mismatch(dw, m, m)
+
+    settings['l1_p'] = settings['l1']
+    settings['l2_p'] = settings['l2']
+
+    # Generate the matrix using the concurrence function
+    tt = np.linspace(min_t,max_t,size)
+    matrix2 = np.zeros((len(dws), size))
+    for j, t in enumerate(tt):
+        for i, dw in enumerate(dws):
+            matrix2[i, j] = conc_angle_mismatch(dw, t, t)
+    
+
+    print(np.min(matrix2), np.max(matrix2))
+
+    dws = dws / 1e12
+    xtick_labels1 = np.linspace(min(mm), max(mm), num=5)  
+    ytick_labels1 = np.linspace(min(dws), max(dws), num=5)
+    xlabel1 = '\\textit{$\\alpha$} (m)'
+    ylabel1 = '\\textit{$bw$} (THz)'
+    xtick_labels2 = np.linspace(min(tt), max(tt), num=5)  
+    ytick_labels2 = np.linspace(min(dws), max(dws), num=5)
+    xlabel2 = '\\textit{$t$} (deg)'
+    ylabel2 = '\\textit{$bw$} (THz)'
+
+    plot_length_angle_mismatch(' Varying Top-hat Bandwidth at Degeneracy ',
+                               matrix1=matrix1, 
+                               mx1_xlabel=xlabel1, 
+                               mx1_xticks=xtick_labels1, 
+                               mx1_ylabel=ylabel1,
+                               mx1_yticks=ytick_labels1,
+                               matrix2=matrix2,
+                               mx2_xlabel=xlabel2, 
+                               mx2_xticks=xtick_labels2, 
+                               mx2_ylabel=ylabel2,
+                               mx2_yticks=ytick_labels2
+                               )
+
 def length_angle_dt(bw, dw, min_m, max_m, min_t, max_t, N=100, size=20):
     settings = {
         'lambda_deg':   1556e-9,
@@ -279,6 +469,86 @@ def length_angle_dt(bw, dw, min_m, max_m, min_t, max_t, N=100, size=20):
     ax2.set_xlabel('\\textit{$t_1$} (deg)')
     ax2.set_ylabel('\\textit{$t_2$} (deg)')
     ax2.set_title('Effect of Angular Mismatch')
+
+def length_angle_dt_slices(bw, dws, min_m, max_m, min_t, max_t, N=100, size=20):
+    settings = {
+        'lambda_deg':   1556e-9,
+        'l1':           1.000,
+        'l1_p':         1.000,
+        'l2':           1.000,
+        'l2_p':         1.000,                                  
+        'a1':           90.0 * np.pi/180.0,                      
+        'a2':           90.0 * np.pi/180.0,
+        'p':            np.sqrt(0.5),                            
+        #'filter_range': np.linspace(dw-0.5*bw,dw+0.5*bw,N)      
+    }
+
+    def conc_length_mismatch(dw, m1, m2):
+        settings['l1_p'] = settings['l1'] + m1
+        settings['l2_p'] = settings['l2'] + m2
+        he_l = []
+        dd=np.linspace(dw-0.5*bw,dw+0.5*bw,N)
+        for i in range(0,N):
+            he_state = define_state(dd[i],settings['a1'],settings['a2'],settings['l1'],settings['l1_p'],settings['l2'],settings['l2_p'])
+            he_l.append(he_state)
+    
+        he_sum = (sum(he_l))/N
+        return concurrence(he_sum.ptrace([0,2]))
+    
+    def conc_angle_mismatch(dw, t1, t2):
+        settings['a1'] = (90+t1) * np.pi/180.0
+        settings['a2'] = (90+t2) * np.pi/180.0
+        he_l = []
+        dd=np.linspace(dw-0.5*bw,dw+0.5*bw,N)
+        for i in range(0,N):
+            he_state = define_state(dd[i],settings['a1'],settings['a2'],settings['l1'],settings['l1_p'],settings['l2'],settings['l2_p'])
+            he_l.append(he_state)
+    
+        he_sum = (sum(he_l))/N
+        return concurrence(he_sum.ptrace([0,2]))
+
+    # Generate the matrix using the concurrence function
+    mm = np.linspace(min_m,max_m,size)
+    matrix1 = np.zeros((len(dws), size))
+    for j, m in enumerate(mm):
+        for i, dw in enumerate(dws):
+            matrix1[i, j] = conc_length_mismatch(dw, m, m)
+
+    settings['l1_p'] = settings['l1']
+    settings['l2_p'] = settings['l2']
+
+    # Generate the matrix using the concurrence function
+    tt = np.linspace(min_t,max_t,size)
+    matrix2 = np.zeros((len(dws), size))
+    for j, t in enumerate(tt):
+        for i, dw in enumerate(dws):
+            matrix2[i, j] = conc_angle_mismatch(dw, t, t)
+    
+
+    print(np.min(matrix2), np.max(matrix2))
+
+    dws = dws / 1e12
+    xtick_labels1 = np.linspace(min(mm), max(mm), num=5)  
+    ytick_labels1 = np.linspace(min(dws), max(dws), num=5)
+    xlabel1 = '\\textit{$\\alpha$} (m)'
+    ylabel1 = '\\textit{$d\\omega$} (THz)'
+    xtick_labels2 = np.linspace(min(tt), max(tt), num=5)  
+    ytick_labels2 = np.linspace(min(dws), max(dws), num=5)
+    xlabel2 = '\\textit{$t$} (deg)'
+    ylabel2 = '\\textit{$d\\omega$} (THz)'
+
+    plot_length_angle_mismatch(f' Varying Detuning of {bw}THz Dual-tooth Filter',
+                               matrix1=matrix1, 
+                               mx1_xlabel=xlabel1, 
+                               mx1_xticks=xtick_labels1, 
+                               mx1_ylabel=ylabel1,
+                               mx1_yticks=ytick_labels1,
+                               matrix2=matrix2,
+                               mx2_xlabel=xlabel2, 
+                               mx2_xticks=xtick_labels2, 
+                               mx2_ylabel=ylabel2,
+                               mx2_yticks=ytick_labels2
+                               )
 
 def powerimbalan_st(bw, min_p, max_p, N=100, size=20):
     settings = {

@@ -1,13 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from qutip import concurrence, basis, tensor
+from pmf.pmf_sim import *
 from heps_state import *
 from meas_stats import quick_counts, gen_tomo_input
 
 def single_setting_example(tomo, N=100):
      ## Static Params
     N = 100                                 # number of slices in finite bandwidth approx
-    src_brightness = 100                    # baseline brightness, Hz
+    src_brightness = 1000                # baseline brightness, Hz
     bw = 6.0e12                             # bandwdith of single flat-top filter, Hz
     src_settings = {
         'lambda_deg':   1556e-9,
@@ -23,19 +24,30 @@ def single_setting_example(tomo, N=100):
     
     ## Dynamic Params
     num_meas = 16                           # number of tomography measurments - this shouldnt be changed!
-    Tacq = 2.0                             # acquisition time of each tomo measurement 
-    add_noise = True                       # add poisson noise to simulated counts
+    Tacq = 10.0                             # acquisition time of each tomo measurement 
+    add_noise = False                        # add poisson noise to simulated counts
     # define the power split / brightness fluctuation params
     fluc_settings = {
-        'period' : 400,
-        'amplit' : 0.2,
-        'baseln' : 0.5,
-        'phisft' : np.pi/3,
-        'tresol' : 1.0                      # resolution of the time series, s
+        'mode'   : 'direct',                  # 'direct' - direct sinusoid of split over time, 'temp' - use simulation of PMF with sinusoid of temp with time   
+        'period' : 197,
+        'amplit' : 0.3,                     # amplitude of sinusoidal oscillation
+        'baseln' : 0.5,                     # average/baseline of oscillation
+        'phisft' : np.pi / 12.0,
+        'tresol' : 1.0,                     # resolution of the time series, s
+        'alpha'  : 0.0 * np.pi / 180.0,
+        'beta'   : 0.0 * np.pi / 180.0,
+        'gamma'  : 45. * np.pi / 180.0,
+        'L1'     : 3.00,
+        'L2'     : 1.00,
+        'L3'     : 1.00,
+        'lstate' : np.array([[0.0],[1]]),
+        'lwvl'   : 778e-9,
+        'B0'     : 5e-4,
+        'DBt'    : -5.6e-7
     }
 
     ## Other params
-    do_time_plot = True
+    do_time_plot = False
 
     (rho, intens, fval) = dynamic_pwrimb_sim(tomo, src_settings, fluc_settings, num_meas, Tacq, src_brightness, add_noise, do_time_plot)
     print('C =\t', concurrence(rho))
@@ -46,19 +58,54 @@ def single_setting_example(tomo, N=100):
     if do_time_plot:
         plt.show() 
 
-def generate_pwrimb_time_series(T=100, A=0.1, C=0.5, phi=0.0, num_periods=2, res=1):
+def direct_pwrimb_time_series(fluc_settings, num_periods=2):
+    T=fluc_settings['period']
+    A=fluc_settings['amplit'] 
+    C=fluc_settings['baseln'] 
+    phi=fluc_settings['phisft']
+    res=fluc_settings['tresol']
     t = np.linspace(0, T*num_periods, int(T*num_periods/res))
     R_ps = A*np.sin(2*np.pi*t/T + phi)+C
     p = np.sqrt(R_ps)
     return (t, R_ps, p)
 
+def pmf_pwrimb_time_series(fluc_settings, num_periods=2):
+    T=fluc_settings['period']
+    A=fluc_settings['amplit'] 
+    C=fluc_settings['baseln'] 
+    phi=fluc_settings['phisft']
+    res=fluc_settings['tresol']
+    t = np.linspace(0, T*num_periods, int(T*num_periods/res))
+    T_pmf = A*np.sin(2*np.pi*t/T + phi)+C
+    # power split ratio, R_ps = I1 / (I1 + I2)
+    delta_b = T_pmf*fluc_settings['DBt']
+    B = fluc_settings['B0'] + delta_b
+    polh = np.array([
+            [1, 0],
+            [0, 0]
+        ])
+    R_ps = np.zeros(shape(T_pmf))
+    for j in range(len(R_ps)):
+        out = oz_pmf_pigtail_int(fluc_settings['alpha'], 
+                                 fluc_settings['beta'], 
+                                 fluc_settings['gamma'], 
+                                 fluc_settings['L1'], 
+                                 fluc_settings['L2'], 
+                                 fluc_settings['L3'], 
+                                 fluc_settings['lstate'], 
+                                 fluc_settings['lwvl'], 
+                                 B[j]
+                                 )[:,0]
+        R_ps[j] = np.dot(np.dot(polh,out).conj().T, np.dot(polh,out))
+    p = np.sqrt(R_ps)
+    return (t, R_ps, p)
+
 def dynamic_pwrimb_sim(tomo, static_settings, fluc_settings, num_meas, Tacq, src_brightness, add_noise=False, do_time_plot=False):
     max_cc = Tacq * src_brightness
-    (t, R_ps, p) = generate_pwrimb_time_series(T=fluc_settings['period'], 
-                                               A=fluc_settings['amplit'], 
-                                               C=fluc_settings['baseln'], 
-                                               phi=fluc_settings['phisft'],
-                                               res=fluc_settings['tresol'])
+    if fluc_settings['mode'] == 'direct':
+        (t, R_ps, p) = direct_pwrimb_time_series(fluc_settings)
+    else:
+        (t, R_ps, p) = pmf_pwrimb_time_series(fluc_settings)
     k_int = 1.0 - 2*np.abs(0.5 - R_ps)      # intensity/brightness multiplier
 
     if do_time_plot:

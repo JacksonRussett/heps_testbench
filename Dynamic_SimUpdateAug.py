@@ -23,9 +23,9 @@ def main():
         # brightness amplitude factor, p ~ sqrt(R_ps)
 
     Some observations...
-        # period T=400s, R_ps ampl=23%   based on PumpInputSpliced+NewFoam_PBSout_3.fig and assuming C is 0.5 -> range is then 27% to 73%
+        # period T=400s, R_ps ampl=23%   based on PumpInputSpliced+NewFoam_PBSout_3.fig for direct fluctions, C is 0.5 -> range is then 27% to 73%
         ## raw counts fluctuate 10% from 400-450Hz
-        ## PA counts fuctuate 40% from 130-180Hz
+        ## PA counts fluctuate 40% from 130-180Hz
 
     Other notes
         After running state estimation, fval above the number of tomographic measurements indicates poor agreement of state with data
