@@ -1,2 +1,4 @@
 __pycache__/*
 results/*
+.vscode/*
+tests/__pycache__/*
