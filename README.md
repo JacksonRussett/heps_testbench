@@ -1,8 +1,8 @@
 # heps_testbench
 
-Suite of a functions for simulating the Polarization-Frequency Hyper-entangled Photon Pair Source (HEPS) based on ___.
+Suite of a functions for simulating the Polarization-Frequency Hyper-entangled Photon Pair Source (HEPS) based on [Chen 2022](https://opg.optica.org/abstract.cfm?uri=OFC-2022-Th4B.2).
 
-Sagnac-based configuration of the source that we wish to simulate.
+Below is the sagnac-based configuration of the source that we wish to simulate.
 ``` 
 ________x______              
 |              |   _________ Output 1
