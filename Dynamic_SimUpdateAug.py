@@ -38,10 +38,10 @@ def main():
 
     start_time = time.time()
 
-    single_setting_example(tomo)
+    #single_setting_example(tomo)
     #(trial_data, phis) = mc_phase(num_trials=1000, add_poisson_noise=False)
-    #(trial_data, phis, static_settings, fluc_settings) = mc_phase(tomo, num_trials=1000, add_poisson_noise=True)
-    #np.savez('results/Dynamic2p4THz_T400_A10p_C50p_MismSrc_PNoise.npz', td=trial_data, phis=phis, ss=static_settings, fs=fluc_settings)
+    (trial_data, phis, static_settings, fluc_settings) = mc_phase(tomo, num_trials=1000, add_poisson_noise=True)
+    np.savez('results/Dynamic4p8THz_MismSrc_PNoise_brt1000.npz', td=trial_data, phis=phis, ss=static_settings, fs=fluc_settings)
     
     # Record the end time
     end_time = time.time()

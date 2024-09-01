@@ -20,20 +20,19 @@ polh = np.array([
     ])
 
 wvl = 778e-9
-L1 = 3.00e0            # length of PMF (meters)
-L2 = 1.00e0            # length of PMF (meters)
-L3 = 0.00e0            # length of PMF (meters)
+L1 = 0.00e0            # length of PMF (meters)
+L2 = 0.80e0            # length of PMF (meters)
+L3 = 0.75e0            # length of PMF (meters)
 ## oz fiber reports ER of ~30 witch corresponds to ~2 deg misalignment
 alpha = 0 / 180 * np.pi  # angular misalignment at connector (rad)
-beta =  0 / 180 * np.pi  # angular misalignment at cross-splice (rad)
+beta =  1 / 180 * np.pi  # angular misalignment at cross-splice (rad)
 gamma = 1.0*np.pi/4      # angular of PMF output to polarizer (rad)
 #input state
-raw_in = np.array([[0.03],[1]]) # jones calc poln state
+raw_in = np.array([[0],[1]]) # jones poln state
 n = 301               # number of points in sweep
 delta_t = np.linspace(-2, 2, n)                    
 delta_b = delta_t*-5.6e-7 # birefringence sweep -2C-+2C
 B = 5e-4 + delta_b      # birefringence of PMF (a.u.)
-print(B)
 
 int_out1 = np.zeros((n,1))
 int_out2 = np.zeros((n,1))

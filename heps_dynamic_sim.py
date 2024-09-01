@@ -200,8 +200,9 @@ def dynamic_pwrimb_sim(tomo, static_settings, fluc_settings, num_meas, Tacq, src
 def mc_phase(tomo, num_trials=10, add_poisson_noise=False):
     ## Static Params
     N = 100                                 # number of slices in finite bandwidth approx
-    src_brightness = 100                    # baseline brightness, Hz
-    bw = 2.4e12                             # bandwdith of single flat-top filter, Hz
+    bw = 4.8e12                             # bandwdith of single flat-top filter, Hz
+    src_brightness = (bw/6.0e12)**2 * 1000                    # baseline brightness, Hz
+    print(src_brightness)
     static_settings = {
         'lambda_deg':   1556e-9,
         'l1':           1.000,
@@ -219,8 +220,9 @@ def mc_phase(tomo, num_trials=10, add_poisson_noise=False):
     Tacq = 10.0                             # acquisition time of each tomo measurement 
     # define the power split / brightness fluctuation params
     fluc_settings = {
+        'mode'   : 'direct',
         'period' : 400,
-        'amplit' : 0.1,
+        'amplit' : 0.0,
         'baseln' : 0.5,
         'phisft' : np.pi/3,
         'tresol' : 1.0                      # resolution of the time series, s
